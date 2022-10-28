@@ -18,7 +18,7 @@ void *data_trans_thread(void *args);
 
 // copy form file "src" to file "des" from "begin" with bolck of "size"
 // return 0 if success
-int data_from_to(const std::string &src_fd,const std::string &des_fd,int begin,int size);
+int data_from_to(const std::string &src,const std::string &des,int begin,int size);
 
 // 0 for success
 int del_file(const std::string &src);

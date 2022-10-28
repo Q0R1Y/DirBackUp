@@ -22,9 +22,31 @@ void *data_trans_thread(void *args)
 	return re;
 }
 
-int data_from_to(int src_fd,int des_fd,int begin,int size)
+int data_from_to(const std::string &src,const std::string &des,int begin,int size)
 {
-	return 1;
+	int fds,fdd;
+	umask(0);
+	if((fds=open(src.c_str(),O_RDONLY))==-1||(fdd=open(des.c_str(),O_WRONLY|O_CREAT,0644))==-1)
+		return 1;
+
+	if(lseek(fds,begin,SEEK_SET)==-1||lseek(fdd,begin,SEEK_SET)==-1)
+		return 1;
+	
+	int len;
+	char buf[1007];
+	for(int i=0;i<size/sizeof(buf)+1;++i)
+	{
+		if((len=read(fds,buf,sizeof(buf)))==-1)
+			return 1;
+		if(write(fdd,buf,len)==-1)
+			return 1;
+	}
+
+	close(fds);
+	close(fdd);
+
+
+	return 0;
 }
 
 int del_file(const std::string &src)
