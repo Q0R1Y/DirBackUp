@@ -211,22 +211,22 @@ void sync_dir(std::string src,std::string des,int flag)
 
 	semctl(sem_id,0,SETVAL,MAX_PROCESS_NU);
 
-//	struct sembuf V[1]{{0,+1,0}};
-//	struct sembuf P[1]{{0,-1,0}};
+	struct sembuf V[1]{{0,+1,0}};
+	struct sembuf P[1]{{0,-1,0}};
 	int nu=files.size();
 	while(files.size())
 	{
-//		pid_t pid;
+		pid_t pid;
 
-//		if((pid=fork())==-1)
-//			perror("fork error:");
-//		else if(pid!=0)
-//		{
-//			if(semop(sem_id,P,1)==-1)
-//				perror("semop error:");
-//		}
-//		else
-//		{
+		if((pid=fork())==-1)
+			perror("fork error:");
+		else if(pid!=0)
+		{
+			if(semop(sem_id,P,1)==-1)
+				perror("semop error:");
+		}
+		else
+		{
 			std::string from=files.front();
 			std::string to=des.substr(0,from.find("/",0))+"/"+from.substr(from.find("/",0)+1);
 			if(file_exist(from,des.substr(0,from.find("/",0))))
@@ -239,10 +239,10 @@ void sync_dir(std::string src,std::string des,int flag)
 			}
 			else
 				cp_file(from,to);
-//			if(semop(sem_id,V,1)==-1)
-//				perror("semop error:");
-//			exit(0);
-//		}
+			if(semop(sem_id,V,1)==-1)
+				perror("semop error:");
+			exit(0);
+		}
 		files.pop_front();
 	}
 	while(nu--) wait(NULL);
