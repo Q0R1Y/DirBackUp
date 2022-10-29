@@ -1,6 +1,7 @@
 #include<scanfile.h>
 #include<datatrans.h>
 #include<iostream>
+#include<sys/wait.h>
 
 std::string SRC_DIR;
 std::string BACKUP_DIR;
@@ -18,6 +19,11 @@ int main()
 	printf("0.EXIT\n");
 	int op;
 	std::cin>>op;
+
+	pthread_t thread;
+	pthread_create(&thread,NULL,progress_bar,NULL);
+	
+		
 	switch(op)
 	{
 case 1:
@@ -32,6 +38,6 @@ case 3:
 default:
 	break;
 	}
-
+	pthread_join(thread,NULL);
 	return 0;
 }

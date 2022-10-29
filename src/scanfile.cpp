@@ -1,5 +1,6 @@
 #include<scanfile.h>
 #include<fcntl.h>
+#include<vector>
 #include<unistd.h>
 #include<dirent.h>
 #include<sys/stat.h>
@@ -32,4 +33,31 @@ int total_size(const std::deque<std::string> &files)
 		res+=lseek(open(files[i].c_str(),O_WRONLY),0,SEEK_END);
 	
 	return res;
+}
+
+
+void* progress_bar(void* args)
+{
+	extern std::string SRC_DIR;
+	extern std::string BACKUP_DIR;
+	extern int op;
+
+	for(int i=0;i<5;++i)
+	{
+		int j;
+		for(j=0;j<i*10;++j)
+			printf("-");
+		for(;j<50;++j)
+			printf(" ");
+		printf("%3d%%",i*20);
+		fflush(stdout);
+		usleep(5000);
+		for(int j=0;j<54;++j)
+			printf("\b");
+	}
+	sleep(1);
+	for(int i=0;i<50;++i)
+		printf("-");
+	printf("%3d%%\n",100);
+	return NULL;
 }

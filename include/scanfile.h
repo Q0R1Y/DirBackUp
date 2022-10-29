@@ -9,6 +9,8 @@
 
 void get_files_name(std::string dir,std::deque<std::string> &stor);
 
-int total_size(std::string dir);
+int total_size(const std::deque<std::string> &files);
+
+void* progress_bar(void* args);
 
 #endif

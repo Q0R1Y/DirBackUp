@@ -22,7 +22,6 @@ int data_from_to(std::string src, std::string des, int begin, int size)
 {
 	int fds, fdd;
 	umask(0);
-	printf("%s %s %d\n", src.c_str(), des.c_str(), begin);
 	if ((fds = open(src.c_str(), O_RDONLY)) == -1 || (fdd = open(des.c_str(), O_WRONLY | O_CREAT, 0644)) == -1)
 		return perror("32 open() error"), 1;
 
@@ -50,7 +49,6 @@ void *data_trans_thread(void *args)
 	void *re = malloc(sizeof(int));
 	*(int *)re = data_from_to(((Data_trans *)args)->src, ((Data_trans *)args)->des,
 			((Data_trans *)args)->begin, ((Data_trans *)args)->size);
-	printf("%d re:%d\n", ((Data_trans *)args)->begin, *(int *)re);
 	return re;
 }
 
@@ -140,7 +138,6 @@ int cp_file(std::string src, std::string des)
 
 	if (size > SIGLE_THREAD_MAX_DATA_SIZE)
 	{
-		printf("MULTITHREAD\n");
 		for (int i = 0; i < size / SIGLE_THREAD_MAX_DATA_SIZE; ++i)
 		{
 			threads.push_back(thread);
@@ -167,7 +164,6 @@ int cp_file(std::string src, std::string des)
 				return perror("pthread_create error"), 1;
 		}
 
-		printf("WAIT\n");
 		for (int i = 0; i < size / SIGLE_THREAD_MAX_DATA_SIZE; ++i)
 		{
 			void *re;
