@@ -1,8 +1,12 @@
 #include <datatrans.h>
+#include<scanfile.h>
 #include <iostream>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include<sys/wait.h>
+#include<sys/sem.h>
+#include<sys/ipc.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
@@ -45,7 +49,7 @@ void *data_trans_thread(void *args)
 {
 	void *re = malloc(sizeof(int));
 	*(int *)re = data_from_to(((Data_trans *)args)->src, ((Data_trans *)args)->des,
-							  ((Data_trans *)args)->begin, ((Data_trans *)args)->size);
+			((Data_trans *)args)->begin, ((Data_trans *)args)->size);
 	printf("%d re:%d\n", ((Data_trans *)args)->begin, *(int *)re);
 	return re;
 }
@@ -76,7 +80,7 @@ int del_file(std::string src)
 }
 
 // src is a relative path of a file.
-// // dir is a relative path of a dir.
+// dir is a relative path of a dir.
 int file_exist(std::string src, std::string dir)
 {
 	std::vector<std::string> src_split_path;
@@ -108,11 +112,25 @@ int file_exist(std::string src, std::string dir)
 int cp_file(std::string src, std::string des)
 {
 	umask(0);
+
+	std::vector<std::string> des_split_path;
+	size_t prepos = 0, nowpos = 0;
+	while ((nowpos = src.find("/", nowpos)) != std::string::npos) // split src by '/'
+	{
+		des_split_path.push_back(des.substr(prepos, nowpos - prepos));
+		prepos = ++nowpos;
+	}
+	des_split_path.push_back(des.substr(prepos, nowpos - prepos));
+
+	std::string des_s=des.substr(0,des.find("/", 0));
+	for(int i=1;i<des_split_path.size()-1;++i)
+		mkdir((des_s+"/"+des_split_path[i]).c_str(),0777),des_s=des_s+"/"+des_split_path[i];
+
 	int fd_src, fd_des;
 	if ((fd_src = open(src.c_str(), O_RDONLY)) == -1)
-		return perror("124 src open fail"), 1;
-	if ((fd_des = open(des.c_str(), O_WRONLY | O_CREAT, 0666)) == -1)
-		return perror("126 src open fail"), 1;
+		return perror("src open fail"), 1;
+	if ((fd_des = open(des.c_str(), O_WRONLY | O_CREAT, 0777)) == -1)
+		return perror("src open fail"), 1;
 
 	int size = lseek(fd_src, 0, SEEK_END);
 
@@ -172,4 +190,61 @@ int cp_file(std::string src, std::string des)
 		data_from_to(src, des, 0, size);
 	}
 	return 0;
+}
+
+void sync_dir(std::string src,std::string des,int flag)
+{
+	umask(0);
+	if(flag==1)
+	{
+		del_file(des);
+		mkdir(des.c_str(),0777);
+	}
+
+	std::deque<std::string> files;
+	get_files_name(src,files);
+
+	key_t key=ftok("./",2);
+	int sem_id;
+	if((sem_id=semget(key,1,IPC_CREAT|0777))==-1&&errno!=EEXIST)
+		perror("semget error:");
+
+	semctl(sem_id,0,SETVAL,MAX_PROCESS_NU);
+
+//	struct sembuf V[1]{{0,+1,0}};
+//	struct sembuf P[1]{{0,-1,0}};
+	int nu=files.size();
+	while(files.size())
+	{
+//		pid_t pid;
+
+//		if((pid=fork())==-1)
+//			perror("fork error:");
+//		else if(pid!=0)
+//		{
+//			if(semop(sem_id,P,1)==-1)
+//				perror("semop error:");
+//		}
+//		else
+//		{
+			std::string from=files.front();
+			std::string to=des.substr(0,from.find("/",0))+"/"+from.substr(from.find("/",0)+1);
+			if(file_exist(from,des.substr(0,from.find("/",0))))
+			{
+				struct stat finfo,tinfo;
+				stat(from.c_str(),&finfo);
+				stat(to.c_str(),&tinfo);
+				if(finfo.st_mtim.tv_sec>tinfo.st_mtim.tv_sec)
+					cp_file(from,to);
+			}
+			else
+				cp_file(from,to);
+//			if(semop(sem_id,V,1)==-1)
+//				perror("semop error:");
+//			exit(0);
+//		}
+		files.pop_front();
+	}
+	while(nu--) wait(NULL);
+	semctl(sem_id,0,IPC_RMID);
 }

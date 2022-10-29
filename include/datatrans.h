@@ -28,4 +28,10 @@ int file_exist(std::string src,std::string dir);
 
 // 0 for success
 int cp_file(std::string src,std::string des);
+
+
+// sync src from des
+// flag=1: copy
+// flag=0: sync
+void sync_dir(std::string src,std::string des,int flag);
 #endif

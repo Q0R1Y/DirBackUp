@@ -5,7 +5,7 @@
 #include<string>
 #include<deque>
 
-#define MAX_PROCESS_NU 7
+#define MAX_PROCESS_NU 1
 
 void get_files_name(std::string dir,std::deque<std::string> &stor);
 
